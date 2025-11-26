@@ -230,6 +230,9 @@ export class NodeOAuthClientProvider implements OAuthClientProvider {
       // Ignore errors, metadata is optional
     })
 
+    // Preserve original behavior: only set the OAuth 2.0 "resource" parameter
+    // when explicitly configured via authorizeResource. Do not otherwise
+    // mutate the resource parameter here.
     if (this.authorizeResource) {
       authorizationUrl.searchParams.set('resource', this.authorizeResource)
     }

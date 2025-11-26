@@ -37,6 +37,7 @@ async function runClient(
   host: string,
   staticOAuthClientMetadata: StaticOAuthClientMetadata,
   staticOAuthClientInfo: StaticOAuthClientInformationFull,
+  authorizeResource: string,
   authTimeoutMs: number,
   serverUrlHash: string,
 ) {
@@ -67,6 +68,7 @@ async function runClient(
     clientName: 'MCP CLI Client',
     staticOAuthClientMetadata,
     staticOAuthClientInfo,
+    authorizeResource,
     serverUrlHash,
     authorizationServerMetadata,
   })
@@ -183,6 +185,7 @@ parseCommandLineArgs(process.argv.slice(2), 'Usage: npx tsx client.ts <https://s
       host,
       staticOAuthClientMetadata,
       staticOAuthClientInfo,
+      authorizeResource,
       authTimeoutMs,
       serverUrlHash,
     }) => {
@@ -194,6 +197,7 @@ parseCommandLineArgs(process.argv.slice(2), 'Usage: npx tsx client.ts <https://s
         host,
         staticOAuthClientMetadata,
         staticOAuthClientInfo,
+        authorizeResource,
         authTimeoutMs,
         serverUrlHash,
       )
