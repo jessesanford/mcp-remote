@@ -36,6 +36,7 @@ export class NodeOAuthClientProvider implements OAuthClientProvider {
   private authorizationServerMetadata: AuthorizationServerMetadata | undefined
   private protectedResourceMetadata: ProtectedResourceMetadata | undefined
   private wwwAuthenticateScope: string | undefined
+  private pendingCodeVerifier: string | null
 
   /**
    * Creates a new NodeOAuthClientProvider
@@ -58,6 +59,7 @@ export class NodeOAuthClientProvider implements OAuthClientProvider {
     this.authorizationServerMetadata = options.authorizationServerMetadata
     this.protectedResourceMetadata = options.protectedResourceMetadata
     this.wwwAuthenticateScope = options.wwwAuthenticateScope
+    this.pendingCodeVerifier = null
 
     if (this.skipResourceParameter) {
       this.validateResourceURL = async () => {
@@ -301,6 +303,7 @@ export class NodeOAuthClientProvider implements OAuthClientProvider {
    */
   async saveCodeVerifier(codeVerifier: string): Promise<void> {
     debugLog('Saving code verifier')
+    this.pendingCodeVerifier = codeVerifier
     await writeTextFile(this.serverUrlHash, 'code_verifier.txt', codeVerifier)
   }
 
@@ -310,8 +313,13 @@ export class NodeOAuthClientProvider implements OAuthClientProvider {
    */
   async codeVerifier(): Promise<string> {
     debugLog('Reading code verifier')
+    if (this.pendingCodeVerifier) {
+      debugLog('Returning in-memory code verifier')
+      return this.pendingCodeVerifier
+    }
     const verifier = await readTextFile(this.serverUrlHash, 'code_verifier.txt', 'No code verifier saved for session')
     debugLog('Code verifier found:', !!verifier)
+    this.pendingCodeVerifier = verifier
     return verifier
   }
 
@@ -345,6 +353,7 @@ export class NodeOAuthClientProvider implements OAuthClientProvider {
         break
 
       case 'verifier':
+        this.pendingCodeVerifier = null
         await deleteConfigFile(this.serverUrlHash, 'code_verifier.txt')
         debugLog('Code verifier invalidated')
         break

@@ -22,6 +22,8 @@ describe('NodeOAuthClientProvider - OAuth Scope Handling', () => {
   let mockReadJsonFile: any
   let mockWriteJsonFile: any
   let mockDeleteConfigFile: any
+  let mockReadTextFile: any
+  let mockWriteTextFile: any
 
   const defaultOptions: OAuthProviderOptions = {
     serverUrl: 'https://example.com',
@@ -34,10 +36,14 @@ describe('NodeOAuthClientProvider - OAuth Scope Handling', () => {
     mockReadJsonFile = vi.mocked(mcpAuthConfig.readJsonFile)
     mockWriteJsonFile = vi.mocked(mcpAuthConfig.writeJsonFile)
     mockDeleteConfigFile = vi.mocked(mcpAuthConfig.deleteConfigFile)
+    mockReadTextFile = vi.mocked(mcpAuthConfig.readTextFile)
+    mockWriteTextFile = vi.mocked(mcpAuthConfig.writeTextFile)
 
     mockReadJsonFile.mockResolvedValue(undefined)
     mockWriteJsonFile.mockResolvedValue(undefined)
     mockDeleteConfigFile.mockResolvedValue(undefined)
+    mockReadTextFile.mockResolvedValue('mock-code-verifier')
+    mockWriteTextFile.mockResolvedValue(undefined)
   })
 
   afterEach(() => {
@@ -139,6 +145,28 @@ describe('NodeOAuthClientProvider - OAuth Scope Handling', () => {
       expect(provider.validateResourceURL).toBeDefined()
       const result = await provider.validateResourceURL!(new URL('https://example.com'), 'https://configured.example.com')
       expect(result).toBeUndefined()
+    })
+  })
+
+  describe('code verifier caching', () => {
+    it('should return cached verifier without hitting disk', async () => {
+      provider = new NodeOAuthClientProvider(defaultOptions)
+      await provider.saveCodeVerifier('cached-verifier')
+
+      const result = await provider.codeVerifier()
+
+      expect(result).toBe('cached-verifier')
+      expect(mockReadTextFile).not.toHaveBeenCalled()
+    })
+
+    it('should read verifier from disk when cache empty', async () => {
+      provider = new NodeOAuthClientProvider(defaultOptions)
+      mockReadTextFile.mockResolvedValueOnce('disk-verifier')
+
+      const result = await provider.codeVerifier()
+
+      expect(result).toBe('disk-verifier')
+      expect(mockReadTextFile).toHaveBeenCalled()
     })
   })
 
