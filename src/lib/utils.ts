@@ -570,6 +570,7 @@ export async function connectToRemoteServer(
  */
 export function setupOAuthCallbackServerWithLongPoll(options: OAuthCallbackServerOptions) {
   let authCode: string | null = null
+  let authCodeConsumed = false
   const app = express()
 
   // Create a promise to track when auth is completed
@@ -627,6 +628,7 @@ export function setupOAuthCallbackServerWithLongPoll(options: OAuthCallbackServe
     }
 
     authCode = code
+    authCodeConsumed = false
     log('Auth code received, resolving promise')
     authCompletedResolve(code)
 
@@ -651,12 +653,14 @@ export function setupOAuthCallbackServerWithLongPoll(options: OAuthCallbackServe
 
   const waitForAuthCode = (): Promise<string> => {
     return new Promise((resolve) => {
-      if (authCode) {
+      if (authCode && !authCodeConsumed) {
+        authCodeConsumed = true
         resolve(authCode)
         return
       }
 
       options.events.once('auth-code-received', (code) => {
+        authCodeConsumed = true
         resolve(code)
       })
     })
