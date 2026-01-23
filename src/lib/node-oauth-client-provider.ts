@@ -29,6 +29,7 @@ export class NodeOAuthClientProvider implements OAuthClientProvider {
   private staticOAuthClientMetadata: StaticOAuthClientMetadata
   private staticOAuthClientInfo: StaticOAuthClientInformationFull
   private authorizeResource: string | undefined
+  private skipResourceParameter: boolean
   private _state: string
   private _clientInfo: OAuthClientInformationFull | undefined
   private authorizationServerMetadata: AuthorizationServerMetadata | undefined
@@ -48,7 +49,9 @@ export class NodeOAuthClientProvider implements OAuthClientProvider {
     this.softwareVersion = options.softwareVersion || MCP_REMOTE_VERSION
     this.staticOAuthClientMetadata = options.staticOAuthClientMetadata
     this.staticOAuthClientInfo = options.staticOAuthClientInfo
-    this.authorizeResource = options.authorizeResource
+    const trimmedAuthorizeResource = options.authorizeResource?.trim()
+    this.authorizeResource = trimmedAuthorizeResource ? trimmedAuthorizeResource : undefined
+    this.skipResourceParameter = options.skipResourceParameter ?? false
     this._state = randomUUID()
     this._clientInfo = undefined
     this.authorizationServerMetadata = options.authorizationServerMetadata
@@ -258,7 +261,12 @@ export class NodeOAuthClientProvider implements OAuthClientProvider {
       // Ignore errors, metadata is optional
     })
 
-    if (this.authorizeResource) {
+    if (this.skipResourceParameter) {
+      if (authorizationUrl.searchParams.has('resource')) {
+        debugLog('Removing resource parameter from authorization URL due to skipResourceParameter option')
+      }
+      authorizationUrl.searchParams.delete('resource')
+    } else if (this.authorizeResource) {
       authorizationUrl.searchParams.set('resource', this.authorizeResource)
     }
 
