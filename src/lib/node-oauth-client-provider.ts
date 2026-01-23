@@ -30,6 +30,7 @@ export class NodeOAuthClientProvider implements OAuthClientProvider {
   private staticOAuthClientInfo: StaticOAuthClientInformationFull
   private authorizeResource: string | undefined
   private skipResourceParameter: boolean
+  validateResourceURL?: (defaultResource: URL, discoveredResource?: string) => Promise<URL | undefined>
   private _state: string
   private _clientInfo: OAuthClientInformationFull | undefined
   private authorizationServerMetadata: AuthorizationServerMetadata | undefined
@@ -57,6 +58,13 @@ export class NodeOAuthClientProvider implements OAuthClientProvider {
     this.authorizationServerMetadata = options.authorizationServerMetadata
     this.protectedResourceMetadata = options.protectedResourceMetadata
     this.wwwAuthenticateScope = options.wwwAuthenticateScope
+
+    if (this.skipResourceParameter) {
+      this.validateResourceURL = async () => {
+        debugLog('Resource parameter disabled - returning undefined resource URL for authorization and token requests')
+        return undefined
+      }
+    }
   }
 
   get redirectUrl(): string {

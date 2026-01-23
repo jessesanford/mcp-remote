@@ -129,6 +129,17 @@ describe('NodeOAuthClientProvider - OAuth Scope Handling', () => {
 
       expect(authUrl.searchParams.has('resource')).toBe(false)
     })
+
+    it('should make validateResourceURL return undefined when skipResourceParameter is true', async () => {
+      provider = new NodeOAuthClientProvider({
+        ...defaultOptions,
+        skipResourceParameter: true,
+      })
+
+      expect(provider.validateResourceURL).toBeDefined()
+      const result = await provider.validateResourceURL!(new URL('https://example.com'), 'https://configured.example.com')
+      expect(result).toBeUndefined()
+    })
   })
 
   describe('backward compatibility', () => {
