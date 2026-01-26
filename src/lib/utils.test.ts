@@ -3,6 +3,7 @@ import { parseCommandLineArgs, shouldIncludeTool, mcpProxy, setupOAuthCallbackSe
 import { Transport } from '@modelcontextprotocol/sdk/shared/transport.js'
 import { EventEmitter } from 'events'
 import express from 'express'
+import { AddressInfo } from 'net'
 
 // All sanitizeUrl tests have been moved to the strict-url-sanitise package
 
@@ -1054,6 +1055,33 @@ describe('setupOAuthCallbackServerWithLongPoll', () => {
     // Test that the server was created with defaults
     expect(server).toBeDefined()
     expect(typeof result.waitForAuthCode).toBe('function')
+  })
+
+  it('should require new auth code after previous one consumed', async () => {
+    const result = setupOAuthCallbackServerWithLongPoll({
+      port: 0,
+      path: '/oauth/callback',
+      events,
+    })
+
+    server = result.server
+    let address = server.address() as AddressInfo | null
+    if (!address) {
+      await new Promise<void>((resolve) => server.once('listening', resolve))
+      address = server.address() as AddressInfo | null
+    }
+    const port = (address as AddressInfo).port
+
+    // First auth cycle
+    await fetch(`http://127.0.0.1:${port}/oauth/callback?code=code-1`)
+    await expect(result.waitForAuthCode()).resolves.toBe('code-1')
+
+    // Second auth cycle should wait for new code
+    const waitPromise = result.waitForAuthCode()
+    setTimeout(() => {
+      fetch(`http://127.0.0.1:${port}/oauth/callback?code=code-2`)
+    }, 10)
+    await expect(waitPromise).resolves.toBe('code-2')
   })
 })
 
